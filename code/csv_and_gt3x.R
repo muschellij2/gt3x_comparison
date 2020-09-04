@@ -13,7 +13,6 @@ library(read.gt3x)
 # }
 
 make_df = function(article_id) {
-  rfigshare::fs_auth
   x = rfigshare::fs_details(article_id = article_id, mine = FALSE,
                             session = NULL)
   files = x$files
