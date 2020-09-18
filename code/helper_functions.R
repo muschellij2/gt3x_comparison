@@ -56,3 +56,35 @@ read_acc_csv = function(file, ...) {
     data = df
   )
 }
+
+
+check_gt3x = function(gt3x, csv) {
+  if (grepl("http", gt3x)) {
+    destfile = tempfile(fileext = ".gt3x.gz")
+    curl::curl_download(gt3x, destfile = destfile, quiet = FALSE)
+    gt3x = destfile
+  }
+  if (grepl("http", csv)) {
+    destfile = tempfile(fileext = ".csv.gz")
+    curl::curl_download(csv, destfile = destfile, quiet = FALSE)
+    csv = destfile
+  }  
+  df = read_acc_csv(csv)
+  hdr = df$header
+  df = df$data
+  colnames(df) = sub("Accelerometer ", "", colnames(df))
+  df = df[, c("time", "X", "Y", "Z")]
+  
+  # read.gt3x
+  act_df = read.gt3x::read.gt3x(gt3x, verbose = TRUE,
+                     asDataFrame = TRUE, imputeZeroes = TRUE)
+  at = attributes(act_df)
+  at$light_data = NULL
+  
+  class(act_df) = "data.frame"
+  act_df = act_df[, c("time", "X", "Y", "Z")]
+  
+  list(df, 
+       act_df)
+  
+}

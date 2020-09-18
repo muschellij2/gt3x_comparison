@@ -1,5 +1,5 @@
 ---
-title: "Old Format"
+title: "Analysis of Upper Limb Data Set"
 output: html_document
 editor_options:
   chunk_output_type: console
@@ -29,7 +29,19 @@ if (packageVersion("read.gt3x") < "0.3.0") {
   )
 }
 
+if (packageVersion("pygt3x") < "0.0.8") {
+  stop(
+    paste0(
+      "Need to install new pygt3x, ", 
+      'remotes::install_github("muschellij2/pygt3x")')
+  )
+}
+
 source(here::here("code/helper_functions.R"))
+get_params = try(get("params"), silent = TRUE)
+if (inherits(get_params, "try-error")) {
+  params = list()
+}
 ```
 
 We are using the helper functions to read in the CSV files and download some data.
@@ -92,8 +104,14 @@ nrow(csv)
 
 
 ```{r}
-irow = sample(nrow(data_df), 1)
+# irow = sample(nrow(data_df), 1)
+irow = params$irow
+if (is.null(irow)) {
+  irow = 5
+}
+print(irow)
 idf = data_df[irow,]
+print(idf)
 download = function(url, name) {
   destfile = file.path(tempdir(), name)
   if (!file.exists(destfile)) {
@@ -131,23 +149,15 @@ We see we have `r nrow(df)` records from the truth, which is not going to agree 
 # Read in the GT3X
 
 ## What is a GT3X
-A `.gt3x` file is simply a zipped folder, but with specific files in there.  In the older NHANES format, we are interested in the `info.txt` and `activity.bin`:
+A `.gt3x` file is simply a zipped folder, but with specific files in there.  In the older NHANES format, we are interested in the `info.txt` and `activity.bin`.  In the newer format, we are interested in `info.txt` and `log.bin`.
 
 ```{r}
 unzipped_gt3x = R.utils::gunzip(
   gt3x_file, remove = FALSE, temporary = TRUE, overwrite = TRUE)
 tfile = tempfile()
 output = unzip(unzipped_gt3x, exdir = tfile)
-files = output[basename(output) %in% c("activity.bin", "info.txt")]
+files = output[basename(output) %in% c("activity.bin", "log.bin", "info.txt")]
 files
-```
-We can calculate the number of samples from https://github.com/actigraph/NHANES-GT3X-File-Format#steps-to-parse-activity-and-light-data-from-a-gt3x-file by
-> calculate total number of samples by multiplying the file size (in bytes) of the activity.bin file by 8 (bits per byte) and then dividing by 36 (bits per sample).
-
-```{r nsamples}
-fsize = file.size(files[ grepl("activity.bin", files)])
-fsize
-print({est_sample_size = round((fsize + 4) * 8 / 36)})
 ```
 
 ```{r unlink}
@@ -181,16 +191,20 @@ at$header$`Download Date`
 tail(act_df)
 last_time = act_df$time[ nrow(act_df)]
 
-bad_time = last_time > at$header$`Download Date`
-bad_time = bad_time | (last_time > at$header$`Stop Date`)
-bad_time
-stopifnot(bad_time)
+if (at$old_version) {
+  bad_time = last_time > at$header$`Download Date`
+  bad_time = bad_time | (last_time > at$header$`Stop Date`)
+  print(bad_time)
+  stopifnot(bad_time)
+}
 ```
 
 In future releases of `read.gt3x`, this will stop this report to indicates changes need to be made:
 
 ```{r}
-stopifnot(bad_time)
+if (at$old_version) {
+  stopifnot(bad_time)
+}
 ```
 
 Right now, we will make the time ourselves
@@ -203,7 +217,7 @@ act_df$time = at$start_time +
 
 last_time2 = act_df$time[ nrow(act_df)]
 last_time2 == at$header$`Download Date`
-last_time2 == at$header$`Stop Date`
+abs((last_time2 - at$header$`Stop Date`)) < 0.5
 ```
 
 ## AGread
@@ -211,10 +225,17 @@ last_time2 == at$header$`Stop Date`
 Here we are going to read in the GT3X file from `AGread`, but it cannot at the time of running.  This is a check to see if new implementations/versions can read it in:
 ```{r}
 ag = try({
-  AGread::read_gt3x(gt3x_file)
+  AGread::read_gt3x(gt3x_file, parser = "dev")
 }, silent = TRUE)
-stopifnot(inherits(ag, "try-error"))
-attributes(ag) = NULL; cat(ag)
+if (at$old_version) {
+  stopifnot(inherits(ag, "try-error"))
+  attributes(ag) = NULL; cat(ag)
+} else {
+  ag = ag$RAW
+  colnames(ag) = trimws(sub("Accelerometer_", "", colnames(ag)))
+  colnames(ag) = trimws(sub("Timestamp", "time", colnames(ag)))
+  ag = ag[, c("time", "X", "Y", "Z")]
+}
 ```
 
 ## pygt3x
@@ -222,7 +243,7 @@ attributes(ag) = NULL; cat(ag)
 Here we are going to read in the GT3X file from `pygt3x` (https://github.com/muschellij2/pygt3x).  There are issues with the last values as we see here, which we do not recommend.  The `impute_zeros
 
 ```{r, error=TRUE}
-py = pygt3x::py_read_gt3x(gt3x_file, verbose = 2)
+py = pygt3x::py_read_gt3x(gt3x_file)
 max_py = max(abs(py$data)) 
 py_success = max_py < 6.1
 stopifnot(py_success)
@@ -239,7 +260,8 @@ Here we look at the records and see if they match up.  This comparison relies on
 
 ```{r}
 if (py_success) {
-  d = act_df == py
+  nrows = min(nrow(py), nrow(act_df))
+  d = act_df[seq(nrows),] == py[seq(nrows),]
   stopifnot(all(d))
 }
 ```
@@ -259,6 +281,9 @@ py_fixed = SummarizedActigraphy::fix_zeros(py)
 They agree!
 
 ```{r}
+stopifnot(all(df[, c("X", "Y", "Z")] == act_df_fixed[, c("X", "Y", "Z")]))
+stopifnot(all(df[, c("X", "Y", "Z")] == py_fixed[, c("X", "Y", "Z")]))
+
 stopifnot(all(df[, c("X", "Y", "Z")] == act_df[, c("X", "Y", "Z")]))
 stopifnot(all(df[, c("X", "Y", "Z")] == py[, c("X", "Y", "Z")]))
 ```
