@@ -21,7 +21,7 @@ library(lubridate)
 library(readxl)
 library(dplyr)
 
-if (packageVersion("read.gt3x") < "0.3.0") {
+if (packageVersion("read.gt3x") < "0.3.1") {
   stop(
     paste0(
       "Need to install new read.gt3x, ", 

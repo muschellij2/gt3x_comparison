@@ -19,7 +19,7 @@ library(dplyr)
 library(pygt3x)
 library(lubridate)
 
-if (packageVersion("read.gt3x") < "0.3.0") {
+if (packageVersion("read.gt3x") < "0.3.1") {
   stop(
     paste0(
       "Need to install new read.gt3x, ", 
