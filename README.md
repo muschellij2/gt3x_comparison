@@ -19,6 +19,18 @@ comparison.
 
     x = list.files(pattern = ".Rmd", path = "reports", full.names = TRUE)
     x = x[file.exists(sub("[.]Rmd$", ".html", x))]
+    paster = function(x) paste0("[", x, "](", x, ")")
+    x = data.frame(
+      Rmd = paster(x),
+      Output = paster(sub("[.]Rmd$", ".html", x)),
+      stringsAsFactors = FALSE)
+    knitr::kable(x, escape = FALSE)
+
+| Rmd                                                        | Output                                                       |
+|:-----------------------------------------------------------|:-------------------------------------------------------------|
+| [reports/new\_gt3x.Rmd](reports/new_gt3x.Rmd)              | [reports/new\_gt3x.html](reports/new_gt3x.html)              |
+| [reports/old\_upper\_limb.Rmd](reports/old_upper_limb.Rmd) | [reports/old\_upper\_limb.html](reports/old_upper_limb.html) |
+| [reports/old.Rmd](reports/old.Rmd)                         | [reports/old.html](reports/old.html)                         |
 
 old\_upper\_limb
 
