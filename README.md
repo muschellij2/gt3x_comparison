@@ -15,15 +15,6 @@ R/Python implementations.
 The [`old`](reports/old.html) shows the old NHANES GT3X format
 comparison.
 
-    x = list.files(pattern = ".Rmd", path = "reports", full.names = TRUE)
-    x = x[file.exists(sub("[.]Rmd$", ".html", x))]
-    paster = function(x) paste0("[", x, "](", x, ")")
-    x = data.frame(
-      Rmd = paster(x),
-      Output = paster(sub("[.]Rmd$", ".html", x)),
-      stringsAsFactors = FALSE)
-    knitr::kable(x, escape = FALSE)
-
 | Rmd                                                        | Output                                                       |
 |:-----------------------------------------------------------|:-------------------------------------------------------------|
 | [reports/new\_gt3x.Rmd](reports/new_gt3x.Rmd)              | [reports/new\_gt3x.html](reports/new_gt3x.html)              |

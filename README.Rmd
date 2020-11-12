@@ -22,7 +22,7 @@ The goal of `gt3x_comparison` is to compare reading in GT3X files from different
 
 The [`old`](reports/old.html) shows the old NHANES GT3X format comparison. 
 
-```{r}
+```{r, echo = FALSE}
 x = list.files(pattern = ".Rmd", path = "reports", full.names = TRUE)
 x = x[file.exists(sub("[.]Rmd$", ".html", x))]
 paster = function(x) paste0("[", x, "](", x, ")")
