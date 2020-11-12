@@ -33,8 +33,6 @@ x = data.frame(
 knitr::kable(x, escape = FALSE)
 ```
 
-## 
-old_upper_limb
 
 ## Packages
 

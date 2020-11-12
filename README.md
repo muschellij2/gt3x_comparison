@@ -1,8 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-gt3x\_comparison
-================
+# gt3x\_comparison
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -11,8 +10,7 @@ The goal of `gt3x_comparison` is to compare reading in GT3X files from
 different devices and comparing the reading in from ActiLife and
 R/Python implementations.
 
-Reports
--------
+## Reports
 
 The [`old`](reports/old.html) shows the old NHANES GT3X format
 comparison.
@@ -32,10 +30,7 @@ comparison.
 | [reports/old\_upper\_limb.Rmd](reports/old_upper_limb.Rmd) | [reports/old\_upper\_limb.html](reports/old_upper_limb.html) |
 | [reports/old.Rmd](reports/old.Rmd)                         | [reports/old.html](reports/old.html)                         |
 
-old\_upper\_limb
-
-Packages
---------
+## Packages
 
 The packages we’ll use is:
 
